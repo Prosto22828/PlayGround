@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#f7d9b4" />
+  <title>Brick by Brick — Tidy up a small town</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='18' width='56' height='28' rx='6' fill='%23e4634f'/%3E%3Crect x='4' y='18' width='56' height='8' rx='4' fill='%23f3846f'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="scene" aria-label="Brick by Brick game view"></canvas>
+    <div id="vignette"></div>
+
+    <!-- ============ IN-GAME HUD ============ -->
+    <div id="hud" class="hidden" aria-live="polite">
+      <div class="hud-top">
+        <div id="objective-card" class="panel objective-card">
+          <div class="objective-icon">
+            <span class="mini-brick" style="--brick:#e4634f"></span>
+          </div>
+          <div class="objective-body">
+            <div class="objective-row">
+              <span id="objective-name">Red Cottage</span>
+              <span id="objective-count" class="objective-count">0 / 0</span>
+            </div>
+            <div class="progress"><div id="objective-bar" class="progress-fill"></div></div>
+          </div>
+          <div id="objective-arrow" class="objective-arrow" title="Direction to the next build">
+            <svg viewBox="0 0 24 24"><path d="M12 2.5 21 21l-9-4.6L3 21z" fill="currentColor"/></svg>
+          </div>
+        </div>
+
+        <div class="hud-top-right">
+          <div class="town-chip panel">
+            <span class="town-chip-dot"></span>
+            <span>Town</span>
+            <strong id="town-progress">0 / 9</strong>
+          </div>
+          <button class="icon-btn panel" id="btn-sound" aria-label="Toggle sound" title="Sound (M)">
+            <svg class="ico-sound-on" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.2a5.4 5.4 0 0 1 0 7.6M19 5.8a8.7 8.7 0 0 1 0 12.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+            <svg class="ico-sound-off" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="m16.5 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          </button>
+          <button class="icon-btn panel" id="btn-plan" aria-label="Town plan" title="Town plan (B)">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 4v16M15 4v16M3 10h18M3 15h18" stroke="currentColor" stroke-width="1.4" opacity=".7"/></svg>
+          </button>
+          <button class="icon-btn panel" id="btn-pause" aria-label="Pause" title="Pause (Esc)">
+            <svg viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1.6" fill="currentColor"/><rect x="14" y="4.5" width="4" height="15" rx="1.6" fill="currentColor"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="crosshair" aria-hidden="true">
+        <span class="ch-dot"></span>
+        <span class="ch-ring"></span>
+      </div>
+
+      <div id="interaction" class="interaction hidden">
+        <span class="interaction-key" id="interaction-key">E</span>
+        <div class="interaction-copy">
+          <strong id="interaction-title">2×1 Brick</strong>
+          <span id="interaction-action">Pick up</span>
+        </div>
+        <span class="interaction-swatch" id="interaction-swatch"></span>
+      </div>
+
+      <div id="banner" class="banner hidden">
+        <div class="banner-check">
+          <svg viewBox="0 0 24 24"><path d="M4.5 12.5 9.5 18 20 6.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="banner-copy">
+          <span id="banner-kicker">Construction Complete</span>
+          <strong id="banner-title">Red Cottage</strong>
+        </div>
+      </div>
+
+      <div id="ability-toast" class="ability-toast hidden">
+        <div class="ability-toast-icon" id="ability-toast-icon"></div>
+        <div class="ability-toast-copy">
+          <span>Ability unlocked</span>
+          <strong id="ability-toast-title">Double Jump</strong>
+        </div>
+      </div>
+
+      <div class="hud-bottom">
+        <div class="hud-bottom-left">
+          <div id="controls-hint" class="controls-hint panel">
+            <div class="hint-row"><kbd>E</kbd><span>Pick up / place</span></div>
+            <div class="hint-row"><kbd>R</kbd><span>Drop all</span></div>
+            <div class="hint-row"><kbd>B</kbd><span>Town plan</span></div>
+          </div>
+        </div>
+
+        <div id="ability-bar" class="ability-bar" role="toolbar" aria-label="Abilities"></div>
+
+        <div class="hud-bottom-right">
+          <div id="inventory-card" class="panel inventory-card">
+            <div class="inv-head">
+              <span class="inv-label">Carrying</span>
+              <span class="inv-cap" id="inv-cap">0 / 10</span>
+            </div>
+            <div id="inv-list" class="inv-list"></div>
+            <div class="inv-empty" id="inv-empty">Look for brick piles</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="mini-hint" class="mini-hint hidden"></div>
+    </div>
+
+    <!-- ============ TITLE ============ -->
+    <div id="title-screen" class="overlay title-screen">
+      <div class="title-clouds" aria-hidden="true">
+        <span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span>
+      </div>
+      <div class="float-brick fb1" aria-hidden="true"><span></span></div>
+      <div class="float-brick fb2" aria-hidden="true"><span></span></div>
+      <div class="float-brick fb3" aria-hidden="true"><span></span></div>
+      <div class="float-brick fb4" aria-hidden="true"><span></span></div>
+
+      <div class="title-content">
+        <div class="title-eyebrow">
+          <span class="eyebrow-line"></span>
+          <span>A cozy tidy-up adventure</span>
+          <span class="eyebrow-line"></span>
+        </div>
+        <h1 class="logo">
+          <span class="logo-top">BRICK</span>
+          <span class="logo-by">by</span>
+          <span class="logo-bottom">BRICK</span>
+          <span class="logo-sub">Tidy up a small town</span>
+        </h1>
+        <p class="title-blurb">The storm scattered a whole town into piles of bricks.<br/>Collect, sort, and build it back — one brick at a time.</p>
+        <div class="title-actions">
+          <button id="btn-play" class="btn btn-primary btn-big">
+            <svg viewBox="0 0 24 24"><path d="M8 5.5 19 12 8 18.5z" fill="currentColor"/></svg>
+            <span id="play-label">Start building</span>
+          </button>
+          <button id="btn-continue" class="btn btn-ghost btn-big hidden">Continue</button>
+        </div>
+        <div class="title-meta">
+          <button id="btn-how" class="text-btn">How to play</button>
+          <span class="meta-dot"></span>
+          <button id="btn-title-sound" class="text-btn">Sound: on</button>
+          <span class="meta-dot"></span>
+          <span class="title-credit">A fan-made tribute</span>
+        </div>
+        <div id="saved-note" class="saved-note hidden"></div>
+      </div>
+      <div class="title-footer">Mouse + WASD · Touch friendly · Progress saves automatically</div>
+    </div>
+
+    <!-- ============ HOW TO PLAY ============ -->
+    <div id="modal-how" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="how-title">
+      <div class="modal-card how-card">
+        <button class="modal-close" data-close="modal-how" aria-label="Close">×</button>
+        <h2 id="how-title">How to tidy a town</h2>
+        <div class="how-grid">
+          <div class="how-step"><div class="how-num">1</div><h3>Find the bricks</h3><p>Walk up to the labelled brick piles. Look at a brick and press <kbd>E</kbd> to pick it up.</p></div>
+          <div class="how-step"><div class="how-num">2</div><h3>Follow the blueprint</h3><p>Glowing blue shapes show where each brick belongs. Match the shape and color, then press <kbd>E</kbd> to place it.</p></div>
+          <div class="how-step"><div class="how-num">3</div><h3>Watch it rise</h3><p>Every brick brings a building back to life. Finish all nine to restore the whole town.</p></div>
+          <div class="how-step"><div class="how-num">4</div><h3>Unlock helpful skills</h3><p>Sprint, double jump, a brick magnet and a bigger wheelbarrow arrive as the town grows. Open the plan with <kbd>B</kbd>.</p></div>
+        </div>
+        <div class="how-keys">
+          <span><kbd>W A S D</kbd> move</span><span><kbd>Mouse</kbd> look</span><span><kbd>Shift</kbd> sprint</span><span><kbd>Space</kbd> jump</span><span><kbd>X</kbd> magnet</span><span><kbd>R</kbd> drop</span>
+        </div>
+        <button class="btn btn-primary" data-close="modal-how">Got it</button>
+      </div>
+    </div>
+
+    <!-- ============ TOWN PLAN ============ -->
+    <div id="modal-plan" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="plan-title">
+      <div class="modal-card plan-card">
+        <div class="plan-head">
+          <div>
+            <span class="plan-kicker">Town plan</span>
+            <h2 id="plan-title">Maple Hollow</h2>
+          </div>
+          <div class="plan-tabs" role="tablist">
+            <button class="plan-tab active" data-tab="buildings" role="tab">Buildings</button>
+            <button class="plan-tab" data-tab="abilities" role="tab">Abilities</button>
+          </div>
+          <button class="modal-close" data-close="modal-plan" aria-label="Close">×</button>
+        </div>
+        <div class="plan-body">
+          <div id="tab-buildings" class="plan-buildings">
+            <aside class="building-list" id="building-list"></aside>
+            <section class="blueprint-sheet">
+              <div class="bp-head">
+                <div>
+                  <span id="bp-status" class="bp-status">Blueprint</span>
+                  <h3 id="bp-name">Red Cottage</h3>
+                  <p id="bp-meta">3 brick types · 0 bricks</p>
+                </div>
+                <div class="bp-complete" id="bp-complete">
+                  <span class="bp-complete-num" id="bp-percent">0%</span>
+                  <span>complete</span>
+                </div>
+              </div>
+              <div class="bp-progress"><div id="bp-bar"></div></div>
+              <div class="bp-toolbar">
+                <span id="bp-count" class="bp-count">0 / 0 bricks placed</span>
+                <label class="switch">
+                  <input type="checkbox" id="bp-missing" />
+                  <span class="switch-track"><span class="switch-thumb"></span></span>
+                  <span>Missing only</span>
+                </label>
+              </div>
+              <div id="bp-grid" class="bp-grid"></div>
+              <div class="bp-locate">
+                <button id="bp-locate" class="btn btn-small btn-ghost-dark">
+                  <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" fill="currentColor"/></svg>
+                  Show me the way
+                </button>
+                <span id="bp-hint">Look for the floating marker in town.</span>
+              </div>
+            </section>
+          </div>
+          <div id="tab-abilities" class="plan-abilities hidden">
+            <div class="skills-intro">
+              <div>
+                <span class="plan-kicker">Builder's path</span>
+                <h3>Earn skills as the town comes back.</h3>
+                <p>Each finished building unlocks something that makes the next one easier.</p>
+              </div>
+              <div class="skill-count"><strong id="skill-count">0</strong><span>of 6 unlocked</span></div>
+            </div>
+            <div class="skill-tree" id="skill-tree"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PAUSE ============ -->
+    <div id="modal-pause" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+      <div class="modal-card pause-card">
+        <div class="pause-logo">BRICK <em>by</em> BRICK</div>
+        <h2 id="pause-title">Taking a little break?</h2>
+        <p class="pause-sub">The town will wait for you.</p>
+        <div class="pause-actions">
+          <button class="btn btn-primary" id="btn-resume">Back to building</button>
+          <button class="btn btn-ghost-dark" id="btn-pause-plan">Town plan</button>
+          <button class="btn btn-ghost-dark" id="btn-pause-sound">Sound: on</button>
+          <button class="btn btn-ghost-dark" id="btn-pause-how">How to play</button>
+          <button class="btn btn-danger" id="btn-reset">Start a new town</button>
+        </div>
+        <div class="pause-stats" id="pause-stats"></div>
+        <p class="pause-tip" id="pause-tip">Tip: brick piles are labelled by shape and color. The town plan lists everything you still need.</p>
+      </div>
+    </div>
+
+    <!-- ============ FINALE ============ -->
+    <div id="modal-final" class="overlay final-screen hidden" role="dialog" aria-modal="true" aria-labelledby="final-title">
+      <div class="confetti" id="confetti" aria-hidden="true"></div>
+      <div class="final-content">
+        <span class="final-kicker">Maple Hollow is whole again</span>
+        <h2 id="final-title">The town is tidy!</h2>
+        <p>Nine buildings. Hundreds of bricks. One very satisfying sunset.</p>
+        <div class="final-stats" id="final-stats"></div>
+        <div class="final-actions">
+          <button class="btn btn-primary btn-big" id="btn-freeplay">Keep exploring</button>
+          <button class="btn btn-ghost" id="btn-final-reset">Build a new town</button>
+        </div>
+        <p class="final-thanks">Thank you for putting every brick back where it belongs.</p>
+      </div>
+    </div>
+
+    <!-- ============ LOADING ============ -->
+    <div id="loading" class="loading">
+      <div class="loading-brick"><span></span><span></span><span></span></div>
+      <div class="loading-copy">Laying the first bricks…</div>
+    </div>
+
+    <!-- ============ TOUCH CONTROLS ============ -->
+    <div id="touch-controls" class="touch-controls hidden">
+      <div id="joystick" class="joystick"><div class="joystick-ring"></div><div id="joystick-knob" class="joystick-knob"></div></div>
+      <div class="touch-buttons">
+        <button class="touch-btn touch-interact" id="touch-interact"><span>E</span><small>Use</small></button>
+        <button class="touch-btn touch-jump" id="touch-jump">
+          <svg viewBox="0 0 24 24"><path d="M12 4 5.5 11h4v9h5v-9h4z" fill="currentColor"/></svg><small>Jump</small>
+        </button>
+        <button class="touch-btn touch-magnet" id="touch-magnet">
+          <svg viewBox="0 0 24 24"><path d="M6 4v8a6 6 0 0 0 12 0V4h-4v8a2 2 0 0 1-4 0V4z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M4.5 4h5M14.5 4h5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><small>Magnet</small>
+        </button>
+        <button class="touch-btn touch-drop" id="touch-drop">
+          <svg viewBox="0 0 24 24"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 17h14v4H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Drop</small>
+        </button>
+      </div>
+      <button id="touch-plan" class="touch-plan-btn" aria-label="Town plan">Plan</button>
+    </div>
+
+    <div id="orientation-hint" class="orientation-hint hidden">Turn your device sideways for a wider view.</div>
+  </div>
+
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js" } }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
