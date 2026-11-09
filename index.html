@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#101513">
+  <title>BREACH — Site Echo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="game-shell">
+    <canvas id="view" aria-label="First person tactical shooter"></canvas>
+    <div class="vignette"></div>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">B</span><span>BREACH<span class="brand-sub"> / FIELD OPS</span></span></div>
+      <div class="objective"><i></i><span id="objective-text">DEFUSE THE DEVICE</span></div>
+      <div class="round-label">OPERATION <b>04</b><span> · SITE ECHO</span></div>
+    </header>
+    <section class="hud">
+      <div class="left-hud">
+        <div class="map-wrap"><canvas id="map" width="144" height="144"></canvas><span class="map-caption">SITE ECHO <b>● LIVE</b></span></div>
+        <div class="team-status"><span class="status-dot"></span><span>YOUR SQUAD</span><b id="kills">0 / 3</b></div>
+      </div>
+      <div class="center-hud">
+        <div class="timer-box"><span>DEVICE DETONATION</span><b id="timer">01:15</b></div>
+        <div class="progress-wrap" id="defuse-progress"><div></div><span>DEFUSING</span></div>
+      </div>
+      <div class="right-hud">
+        <div class="ammo"><span>RIFLE · <b>V-7</b></span><strong id="ammo">24<span> / 96</span></strong></div>
+        <div class="weapon-icon">⌁</div>
+      </div>
+    </section>
+    <div class="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
+    <div class="hit-marker" id="hit-marker">×</div>
+    <div class="toast" id="toast"></div>
+    <div class="bottom-hud">
+      <div class="health"><span class="health-icon">＋</span><div><b id="health">100</b><small>HEALTH</small></div><div class="health-bar"><i id="health-bar"></i></div></div>
+      <div class="controls-hint"><span>WASD</span> MOVE <span>⇧</span> SPRINT <span>R</span> RELOAD</div>
+      <div class="armor"><span class="armor-icon">▰</span><div><b id="armor">100</b><small>ARMOR</small></div></div>
+    </div>
+    <div id="touch-controls" aria-label="Touch controls">
+      <div id="stick-zone"><div id="stick"><span></span></div></div>
+      <button id="fire-button" class="touch-button fire-button">FIRE</button>
+      <button id="reload-button" class="touch-button reload-button">↻</button>
+      <button id="use-button" class="touch-button use-button">DEFUSE</button>
+    </div>
+    <div id="start-screen" class="screen visible">
+      <div class="intro-card">
+        <div class="eyebrow"><span></span> TACTICAL SIMULATION — 04</div>
+        <h1>ONE SITE.<br><em>ONE CHANCE.</em></h1>
+        <p>Hostiles have armed a device at Site Echo. Clear the area and disarm it before the clock runs out.</p>
+        <div class="mission-facts"><div><small>MISSION</small><b>DEVICE DEFUSAL</b></div><div><small>HOSTILES</small><b>3 OPERATORS</b></div><div><small>LOADOUT</small><b>V-7 ASSAULT</b></div></div>
+        <button id="start-button" class="primary-button">DEPLOY <span>→</span></button>
+        <div class="input-note">DESKTOP <b>WASD</b> MOVE · <b>MOUSE</b> AIM/FIRE · <b>R</b> RELOAD<br>TOUCH <b>LEFT STICK</b> MOVE · <b>DRAG</b> AIM · <b>FIRE</b> ENGAGE</div>
+      </div>
+      <div class="screen-footer">BREACH FIELD SYSTEMS <span>●</span> TRAINING SIMULATION</div>
+    </div>
+    <div id="end-screen" class="screen">
+      <div class="intro-card end-card"><div class="eyebrow"><span></span> OPERATION 04 · SITE ECHO</div><h1 id="result-title">SITE<br><em>SECURED.</em></h1><p id="result-copy">Device defused. Area is secure.</p><div class="mission-facts"><div><small>HOSTILES</small><b id="result-kills">0 / 3</b></div><div><small>HEALTH</small><b id="result-health">100%</b></div><div><small>STATUS</small><b id="result-status">SUCCESS</b></div></div><button id="again-button" class="primary-button">REDEPLOY <span>↻</span></button></div>
+    </div>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
