@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#1a1510" />
+<title>A Game About Digging A Hole — 3D</title>
+<link rel="stylesheet" href="./style.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2317120c'/%3E%3Cpath d='M12 50 L40 22' stroke='%23ffb938' stroke-width='7' stroke-linecap='round'/%3E%3Cpath d='M32 14 C44 10 54 20 50 32' stroke='%23f7ecd4' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+</head>
+<body>
+<div id="game">
+  <canvas id="view"></canvas>
+  <div id="depth-tint"></div>
+
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="card depth-card">
+        <div class="kicker">DEPTH</div>
+        <div class="big"><span id="depth-value">0.0</span><span class="unit">m</span></div>
+        <div class="sub">BEST <span id="best-value">0.0</span> m</div>
+      </div>
+
+      <div class="objective-card" id="objective-card">
+        <div class="obj-kicker">CURRENT GOAL</div>
+        <div class="obj-text" id="objective-text">Dig down 10 metres</div>
+        <div class="obj-reward" id="objective-reward">REWARD $40</div>
+      </div>
+
+      <div class="card money-card">
+        <div class="kicker">WALLET</div>
+        <div class="big"><span class="currency">$</span><span id="money-value">0</span></div>
+        <div class="sub" id="bank-sub">ORE-O-MATIC ONLINE</div>
+      </div>
+    </div>
+
+    <div id="crosshair">
+      <span class="ch-dot"></span>
+      <span class="ch-line ch-t"></span><span class="ch-line ch-b"></span>
+      <span class="ch-line ch-l"></span><span class="ch-line ch-r"></span>
+      <svg id="mine-ring" viewBox="0 0 48 48">
+        <circle class="ring-bg" cx="24" cy="24" r="19"></circle>
+        <circle id="ring-fill" cx="24" cy="24" r="19"></circle>
+      </svg>
+    </div>
+
+    <div id="signal" class="hidden">
+      <span class="sig-diamond">◆</span>
+      <span class="sig-label">HEART OF THE HOLE</span>
+      <span class="sig-dist" id="signal-dist">0 m</span>
+      <span class="sig-arrow" id="signal-arrow">↑</span>
+    </div>
+
+    <div id="interact-prompt" class="hidden"><span class="key">E</span><span id="prompt-text">Use Ore-O-Matic</span></div>
+
+    <div class="hud-bottom">
+      <div class="card pack-card">
+        <div class="pack-head"><span>BACKPACK</span><span id="weight-label">0.0 / 30 kg</span></div>
+        <div class="pack-bar"><div id="pack-fill"></div></div>
+        <div id="inv-chips"></div>
+      </div>
+
+      <div class="card drill-card">
+        <div class="drill-top"><span class="kicker">EQUIPPED</span><span class="winch-hint"><span class="key">F</span> WINCH</span></div>
+        <div class="drill-name" id="drill-name">RUSTY SHOVEL</div>
+        <div class="drill-stats">
+          <span>SPEED <b id="drill-speed">1.0×</b></span>
+          <span>POWER <b id="drill-power">I</b></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="toasts"></div>
+
+    <div id="mobile-ui" class="hidden">
+      <div id="joystick"><div id="joystick-knob"></div></div>
+      <div class="mobile-actions">
+        <button id="btn-recall" class="mbtn small">WINCH</button>
+        <button id="btn-interact" class="mbtn small">USE</button>
+        <button id="btn-jump" class="mbtn small">JUMP</button>
+        <button id="btn-dig" class="mbtn dig">DIG</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fade"></div>
+
+  <!-- START -->
+  <div id="screen-start" class="screen">
+    <div class="start-wrap">
+      <div class="badge">FAN-MADE 3D TRIBUTE</div>
+      <h1 class="logo">
+        <span class="logo-l1">A GAME ABOUT</span>
+        <span class="logo-l2">DIGGING</span>
+        <span class="logo-l3">A HOLE</span>
+      </h1>
+      <p class="tagline">DIG. SELL. UPGRADE. DIG DEEPER.</p>
+      <div class="start-actions">
+        <button id="btn-start" class="btn primary">START DIGGING</button>
+        <button id="btn-new" class="btn ghost hidden">NEW HOLE</button>
+      </div>
+      <div class="controls-grid">
+        <div><span class="key">WASD</span><span>Move</span></div>
+        <div><span class="key">MOUSE</span><span>Look</span></div>
+        <div><span class="key">LMB</span><span>Dig / mine</span></div>
+        <div><span class="key">RMB</span><span>Place dirt</span></div>
+        <div><span class="key">SPACE</span><span>Jump</span></div>
+        <div><span class="key">F</span><span>Winch up / down</span></div>
+        <div><span class="key">E</span><span>Use machine</span></div>
+        <div><span class="key">ESC</span><span>Pause</span></div>
+      </div>
+      <p class="smallprint">An original voxel recreation inspired by <i>A Game About Digging A Hole</i>. No original assets used.</p>
+    </div>
+  </div>
+
+  <!-- PAUSE -->
+  <div id="screen-pause" class="screen hidden">
+    <div class="modal pause-modal">
+      <div class="modal-kicker">TAKE A BREATH</div>
+      <h2>PAUSED</h2>
+      <p class="muted">The hole will wait for you.</p>
+      <div class="pause-stats">
+        <div><span>DEPTH</span><b id="pause-depth">0.0 m</b></div>
+        <div><span>BEST</span><b id="pause-best">0.0 m</b></div>
+        <div><span>MINED</span><b id="pause-mined">0</b></div>
+        <div><span>PLAYTIME</span><b id="pause-time">0:00</b></div>
+      </div>
+      <div class="pause-actions">
+        <button id="btn-resume" class="btn primary">KEEP DIGGING</button>
+        <button id="btn-mute" class="btn ghost">SOUND: ON</button>
+        <button id="btn-reset" class="btn danger">RESET HOLE</button>
+      </div>
+      <div class="pause-controls">
+        <span><b>WASD</b> move</span><span><b>SPACE</b> jump</span><span><b>LMB</b> dig</span><span><b>RMB</b> place</span><span><b>F</b> winch</span><span><b>E</b> machine</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div id="screen-shop" class="screen hidden">
+    <div class="shop-panel">
+      <div class="shop-head">
+        <div class="shop-brand">
+          <span class="shop-led"></span>
+          <div>
+            <div class="shop-name">ORE-O-MATIC</div>
+            <div class="shop-sub">BUY · SELL · GET RICH · DIG DEEPER</div>
+          </div>
+        </div>
+        <div class="shop-cash"><span>$</span><b id="shop-money">0</b></div>
+        <button id="shop-close" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="sell">SELL ORES</button>
+        <button class="tab" data-tab="upgrade">UPGRADES</button>
+      </div>
+      <div class="shop-body">
+        <section id="sell-panel" class="tab-panel">
+          <div class="sell-cols"><span>MATERIAL</span><span>QTY</span><span>VALUE</span><span>SUBTOTAL</span></div>
+          <div id="sell-list" class="sell-list"></div>
+          <div class="sell-footer">
+            <div class="sell-total"><span>BACKPACK VALUE</span><b id="sell-total">$0</b></div>
+            <button id="sell-all" class="btn primary">SELL EVERYTHING</button>
+          </div>
+        </section>
+        <section id="upgrade-panel" class="tab-panel hidden">
+          <div id="upgrade-grid" class="upgrade-grid"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- WIN -->
+  <div id="screen-win" class="screen hidden">
+    <div class="modal win-modal">
+      <div class="win-glow"></div>
+      <div class="badge amber">HOLE CONQUERED</div>
+      <h2>YOU FOUND THE<br /><span>HEART OF THE HOLE</span></h2>
+      <p class="muted">Eighty metres of dirt, rock and questionable life choices. Worth it.</p>
+      <div class="win-stats">
+        <div><b id="win-depth">0 m</b><span>DEEPEST</span></div>
+        <div><b id="win-blocks">0</b><span>BLOCKS MINED</span></div>
+        <div><b id="win-money">$0</b><span>EARNED</span></div>
+        <div><b id="win-time">0:00</b><span>TIME</span></div>
+      </div>
+      <div class="win-actions">
+        <button id="btn-keep" class="btn primary">KEEP DIGGING</button>
+        <button id="btn-again" class="btn ghost">NEW HOLE</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="screen">
+    <div class="loader">
+      <div class="loader-icon">⛏</div>
+      <div class="loader-title">DIGGING A HOLE…</div>
+      <div class="loader-bar"><div id="loader-fill"></div></div>
+      <div class="loader-sub">GENERATING 458,752 CUBES OF DIRT</div>
+    </div>
+  </div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
